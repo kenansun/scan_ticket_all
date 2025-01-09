@@ -1,0 +1,63 @@
+buildscript {
+    ext {
+        kotlin_version = '1.8.22'  // 降级 Kotlin 版本
+        agp_version = '8.1.0'  // 更新 Android Gradle Plugin 版本
+    }
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url 'https://storage.googleapis.com/download.flutter.io'
+        }
+    }
+
+    dependencies {
+        classpath "com.android.tools.build:gradle:$agp_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url 'https://storage.googleapis.com/download.flutter.io'
+        }
+        def flutterSdkPath = {
+            def properties = new Properties()
+            def propertiesFile = new File(rootProject.projectDir, "local.properties")
+            if (propertiesFile.exists()) {
+                properties.load(new FileInputStream(propertiesFile))
+                return properties.getProperty('flutter.sdk')
+            }
+            return null
+        }()
+        maven {
+            url "${flutterSdkPath}/bin/cache/artifacts/engine/android-arm64"
+        }
+        maven {
+            url "${flutterSdkPath}/bin/cache/artifacts/engine/android-x64"
+        }
+    }
+    
+    configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
+        }
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
