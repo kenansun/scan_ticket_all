@@ -1,13 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import '../providers/scan_state.dart';
 import '../../../core/extensions/context_extension.dart';
 
 class ScanScreen extends ConsumerWidget {
   const ScanScreen({super.key});
 
-  Future<void> _pickImage(BuildContext context, WidgetRef ref) async {
+  Future<void> _pickImage(WidgetRef ref) async {
     final picker = ImagePicker();
     try {
       final image = await picker.pickImage(source: ImageSource.camera);
@@ -15,11 +17,9 @@ class ScanScreen extends ConsumerWidget {
         await ref.read(scanStateProvider.notifier).scanImage(image.path);
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('选择图片失败: $e')),
-        );
-      }
+      ScaffoldMessenger.of(ref.context!).showSnackBar(
+        SnackBar(content: Text('选择图片失败: $e')),
+      );
     }
   }
 
@@ -30,166 +30,95 @@ class ScanScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('扫描小票'),
-        actions: [
-          if (state.imagePath != null)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => _pickImage(context, ref),
-            ),
-        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (state.imagePath != null) ...[
-              Expanded(
-                flex: 2,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    state.imagePath!,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (state.isUploading || state.isScanning)
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
-                      Text(
-                        state.isUploading ? '正在上传图片...' : '正在识别小票...',
-                        style: context.textTheme.titleMedium,
+      body: Consumer(
+        builder: (context, ref, child) {
+          final state = ref.watch(scanStateProvider);
+          
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (state.imagePath != null) ...[
+                    AspectRatio(
+                      aspectRatio: 3/4,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: state.imageUrl != null
+                            ? Image.network(
+                                state.imageUrl!,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      value: loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress.cumulativeBytesLoaded /
+                                              loadingProgress.expectedTotalBytes!
+                                          : null,
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('图片加载错误: $error');
+                                  return state.imagePath != null
+                                      ? Image.file(
+                                          File(state.imagePath!),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : const Icon(Icons.error);
+                                },
+                              )
+                            : Image.file(
+                                File(state.imagePath!),
+                                fit: BoxFit.cover,
+                              ),
                       ),
-                    ],
-                  ),
-                ),
-              )
-            else if (state.error != null)
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '识别失败: ${state.error}',
-                        style: context.textTheme.titleMedium?.copyWith(
-                          color: context.colorScheme.error,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => _pickImage(context, ref),
-                        child: const Text('重试'),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else if (state.scanResult != null)
-              Expanded(
-                flex: 3,
-                child: Card(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '识别结果',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildResultItem('商家', state.scanResult!['merchantName']),
-                        _buildResultItem('金额', '¥${state.scanResult!['totalAmount']}'),
-                        _buildResultItem('日期', state.scanResult!['date']),
-                        const Divider(),
-                        if (state.scanResult!['items'] != null) ...[
-                          const Text(
-                            '商品明细',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ...List.from(state.scanResult!['items']).map(
-                            (item) => ListTile(
-                              dense: true,
-                              title: Text(item['name']),
-                              trailing: Text('¥${item['price']}'),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // TODO: Save receipt
-                              Navigator.pop(context);
-                            },
-                            child: const Text('保存'),
-                          ),
-                        ),
-                      ],
                     ),
-                  ),
-                ),
-              )
-            else
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.camera_alt,
-                        size: 64,
-                        color: context.colorScheme.primary.withOpacity(0.5),
+                    const SizedBox(height: 16),
+                  ],
+                  if (state.isUploading || state.isScanning)
+                    const CircularProgressIndicator(),
+                  if (state.error != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        state.error!,
+                        style: const TextStyle(color: Colors.red),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '点击下方按钮开始扫描小票',
-                        style: context.textTheme.titleMedium,
+                    ),
+                  if (state.scanResult != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '识别结果',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(state.scanResult.toString()),
+                            ],
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 32),
-                      ElevatedButton.icon(
-                        onPressed: () => _pickImage(context, ref),
-                        icon: const Icon(Icons.camera_alt),
-                        label: const Text('开始扫描'),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
+                ],
               ),
-          ],
-        ),
+            ),
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildResultItem(String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Text(
-            '$label: ',
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-          Text(value ?? '未识别'),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _pickImage(ref),
+        child: const Icon(Icons.camera_alt),
       ),
     );
   }

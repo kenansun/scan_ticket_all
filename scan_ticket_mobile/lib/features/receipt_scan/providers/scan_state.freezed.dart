@@ -17,6 +17,7 @@ final _privateConstructorUsedError = UnsupportedError(
 /// @nodoc
 mixin _$ScanState {
   String? get imagePath => throw _privateConstructorUsedError;
+  String? get imageUrl => throw _privateConstructorUsedError;
   bool get isScanning => throw _privateConstructorUsedError;
   bool get isUploading => throw _privateConstructorUsedError;
   String? get error => throw _privateConstructorUsedError;
@@ -36,6 +37,7 @@ abstract class $ScanStateCopyWith<$Res> {
   @useResult
   $Res call(
       {String? imagePath,
+      String? imageUrl,
       bool isScanning,
       bool isUploading,
       String? error,
@@ -58,6 +60,7 @@ class _$ScanStateCopyWithImpl<$Res, $Val extends ScanState>
   @override
   $Res call({
     Object? imagePath = freezed,
+    Object? imageUrl = freezed,
     Object? isScanning = null,
     Object? isUploading = null,
     Object? error = freezed,
@@ -67,6 +70,10 @@ class _$ScanStateCopyWithImpl<$Res, $Val extends ScanState>
       imagePath: freezed == imagePath
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
+              as String?,
+      imageUrl: freezed == imageUrl
+          ? _value.imageUrl
+          : imageUrl // ignore: cast_nullable_to_non_nullable
               as String?,
       isScanning: null == isScanning
           ? _value.isScanning
@@ -89,15 +96,16 @@ class _$ScanStateCopyWithImpl<$Res, $Val extends ScanState>
 }
 
 /// @nodoc
-abstract class _$$ScanStateImplCopyWith<$Res>
+abstract class _$$$ScanStateImplImplCopyWith<$Res>
     implements $ScanStateCopyWith<$Res> {
-  factory _$$ScanStateImplCopyWith(
-          _$ScanStateImpl value, $Res Function(_$ScanStateImpl) then) =
-      __$$ScanStateImplCopyWithImpl<$Res>;
+  factory _$$$ScanStateImplImplCopyWith(_$$ScanStateImplImpl value,
+          $Res Function(_$$ScanStateImplImpl) then) =
+      __$$$ScanStateImplImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call(
       {String? imagePath,
+      String? imageUrl,
       bool isScanning,
       bool isUploading,
       String? error,
@@ -105,11 +113,11 @@ abstract class _$$ScanStateImplCopyWith<$Res>
 }
 
 /// @nodoc
-class __$$ScanStateImplCopyWithImpl<$Res>
-    extends _$ScanStateCopyWithImpl<$Res, _$ScanStateImpl>
-    implements _$$ScanStateImplCopyWith<$Res> {
-  __$$ScanStateImplCopyWithImpl(
-      _$ScanStateImpl _value, $Res Function(_$ScanStateImpl) _then)
+class __$$$ScanStateImplImplCopyWithImpl<$Res>
+    extends _$ScanStateCopyWithImpl<$Res, _$$ScanStateImplImpl>
+    implements _$$$ScanStateImplImplCopyWith<$Res> {
+  __$$$ScanStateImplImplCopyWithImpl(
+      _$$ScanStateImplImpl _value, $Res Function(_$$ScanStateImplImpl) _then)
       : super(_value, _then);
 
   /// Create a copy of ScanState
@@ -118,15 +126,20 @@ class __$$ScanStateImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? imagePath = freezed,
+    Object? imageUrl = freezed,
     Object? isScanning = null,
     Object? isUploading = null,
     Object? error = freezed,
     Object? scanResult = freezed,
   }) {
-    return _then(_$ScanStateImpl(
+    return _then(_$$ScanStateImplImpl(
       imagePath: freezed == imagePath
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
+              as String?,
+      imageUrl: freezed == imageUrl
+          ? _value.imageUrl
+          : imageUrl // ignore: cast_nullable_to_non_nullable
               as String?,
       isScanning: null == isScanning
           ? _value.isScanning
@@ -150,9 +163,10 @@ class __$$ScanStateImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$ScanStateImpl implements _ScanState {
-  const _$ScanStateImpl(
+class _$$ScanStateImplImpl implements _$ScanStateImpl {
+  const _$$ScanStateImplImpl(
       {this.imagePath,
+      this.imageUrl,
       this.isScanning = false,
       this.isUploading = false,
       this.error,
@@ -161,6 +175,8 @@ class _$ScanStateImpl implements _ScanState {
 
   @override
   final String? imagePath;
+  @override
+  final String? imageUrl;
   @override
   @JsonKey()
   final bool isScanning;
@@ -181,16 +197,18 @@ class _$ScanStateImpl implements _ScanState {
 
   @override
   String toString() {
-    return 'ScanState(imagePath: $imagePath, isScanning: $isScanning, isUploading: $isUploading, error: $error, scanResult: $scanResult)';
+    return 'ScanState(imagePath: $imagePath, imageUrl: $imageUrl, isScanning: $isScanning, isUploading: $isUploading, error: $error, scanResult: $scanResult)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$ScanStateImpl &&
+            other is _$$ScanStateImplImpl &&
             (identical(other.imagePath, imagePath) ||
                 other.imagePath == imagePath) &&
+            (identical(other.imageUrl, imageUrl) ||
+                other.imageUrl == imageUrl) &&
             (identical(other.isScanning, isScanning) ||
                 other.isScanning == isScanning) &&
             (identical(other.isUploading, isUploading) ||
@@ -201,7 +219,7 @@ class _$ScanStateImpl implements _ScanState {
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, imagePath, isScanning,
+  int get hashCode => Object.hash(runtimeType, imagePath, imageUrl, isScanning,
       isUploading, error, const DeepCollectionEquality().hash(_scanResult));
 
   /// Create a copy of ScanState
@@ -209,20 +227,24 @@ class _$ScanStateImpl implements _ScanState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$ScanStateImplCopyWith<_$ScanStateImpl> get copyWith =>
-      __$$ScanStateImplCopyWithImpl<_$ScanStateImpl>(this, _$identity);
+  _$$$ScanStateImplImplCopyWith<_$$ScanStateImplImpl> get copyWith =>
+      __$$$ScanStateImplImplCopyWithImpl<_$$ScanStateImplImpl>(
+          this, _$identity);
 }
 
-abstract class _ScanState implements ScanState {
-  const factory _ScanState(
+abstract class _$ScanStateImpl implements ScanState {
+  const factory _$ScanStateImpl(
       {final String? imagePath,
+      final String? imageUrl,
       final bool isScanning,
       final bool isUploading,
       final String? error,
-      final Map<String, dynamic>? scanResult}) = _$ScanStateImpl;
+      final Map<String, dynamic>? scanResult}) = _$$ScanStateImplImpl;
 
   @override
   String? get imagePath;
+  @override
+  String? get imageUrl;
   @override
   bool get isScanning;
   @override
@@ -236,6 +258,6 @@ abstract class _ScanState implements ScanState {
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ScanStateImplCopyWith<_$ScanStateImpl> get copyWith =>
+  _$$$ScanStateImplImplCopyWith<_$$ScanStateImplImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

@@ -8,7 +8,7 @@ class EnvConfig {
   static Environment currentEnv = Environment.dev;
 
   static final Map<Environment, String> _baseUrls = {
-    Environment.dev: 'http://192.168.1.23:8080',  // 本地开发环境
+    Environment.dev: 'http://192.168.161.160:8080',  // 更新为正确的IP地址
     Environment.test: 'http://test-api.example.com', // 测试环境
     Environment.prod: 'https://api.example.com',     // 生产环境
   };

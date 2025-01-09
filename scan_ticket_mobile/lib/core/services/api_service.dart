@@ -9,23 +9,50 @@ class ApiService {
   // OSS 相关
   Future<String> uploadImage(String filePath) async {
     try {
+      // 1. 获取签名
+      final signResponse = await _client.post(
+        '/api/v1/oss/signature',  
+        data: {
+          'fileName': filePath.split('/').last,
+          'fileType': 'image/jpeg',
+        },
+      );
+
+      if (signResponse.statusCode != 200) {
+        throw Exception('获取上传签名失败');
+      }
+
+      final signData = signResponse.data;
+      
+      // 2. 构建表单数据
       final formData = FormData.fromMap({
+        'key': '${signData['dir']}${filePath.split('/').last}',
+        'policy': signData['policy'],
+        'OSSAccessKeyId': signData['accessId'],
+        'success_action_status': '200',
+        'signature': signData['signature'],
+        'x-oss-object-acl': 'public-read',  
         'file': await MultipartFile.fromFile(filePath),
       });
 
-      final response = await _client.post(
-        '${AppConstants.apiPrefix}/oss/upload',
+      // 3. 上传到OSS
+      final uploadResponse = await Dio().post(
+        signData['host'],
         data: formData,
       );
 
-      if (response.data['code'] == 200) {
-        return response.data['data']['url'];
+      if (uploadResponse.statusCode == 200) {
+        final url = '${signData['host']}/${signData['dir']}${filePath.split('/').last}';
+        print('上传成功: $url');
+        return url;
       } else {
-        throw Exception(response.data['message'] ?? '上传失败');
+        throw Exception('上传失败');
       }
     } catch (e) {
+      print('上传失败: $e');
       if (e is DioException) {
-        throw Exception(e.response?.data['message'] ?? '网络请求失败');
+        print('请求URL: ${e.requestOptions.uri}');
+        print('响应数据: ${e.response?.data}');
       }
       rethrow;
     }
@@ -34,19 +61,37 @@ class ApiService {
   // AI 分析相关
   Future<Map<String, dynamic>> analyzeReceipt(String imageUrl) async {
     try {
+      print('发送AI分析请求 - URL: $imageUrl');
+      
       final response = await _client.post(
-        '${AppConstants.apiPrefix}/ai/analyze',
-        data: {'image_url': imageUrl},
+        '/api/v1/ai/analyze',  
+        data: {
+          'image_url': imageUrl,
+          'options': {
+            'language': 'zh_CN',
+            'detect_orientation': true
+          }
+        },
       );
 
-      if (response.data['code'] == 200) {
-        return response.data['data'];
+      print('AI分析响应: ${response.data}');
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map<String, dynamic>) {
+          return response.data;
+        } else {
+          throw Exception('响应数据格式错误');
+        }
       } else {
-        throw Exception(response.data['message'] ?? '分析失败');
+        throw Exception('分析失败: ${response.statusCode}');
       }
     } catch (e) {
+      print('AI分析请求失败: $e');
       if (e is DioException) {
-        throw Exception(e.response?.data['message'] ?? '网络请求失败');
+        print('请求URL: ${e.requestOptions.uri}');
+        print('请求数据: ${e.requestOptions.data}');
+        print('响应状态: ${e.response?.statusCode}');
+        print('响应数据: ${e.response?.data}');
       }
       rethrow;
     }
@@ -80,7 +125,7 @@ class ApiService {
       };
 
       final response = await _client.get(
-        '${AppConstants.apiPrefix}/receipts',
+        '/api/v1/receipts',
         queryParameters: queryParams,
       );
 
@@ -100,7 +145,7 @@ class ApiService {
   Future<Map<String, dynamic>> getReceiptDetail(String id) async {
     try {
       final response = await _client.get(
-        '${AppConstants.apiPrefix}/receipts/$id',
+        '/api/v1/receipts/$id',
       );
 
       if (response.data['code'] == 200) {
@@ -119,7 +164,7 @@ class ApiService {
   Future<void> updateReceipt(String id, Map<String, dynamic> data) async {
     try {
       final response = await _client.put(
-        '${AppConstants.apiPrefix}/receipts/$id',
+        '/api/v1/receipts/$id',
         data: data,
       );
 
@@ -137,7 +182,7 @@ class ApiService {
   Future<void> updateReceiptStatus(String id, ReceiptStatus status) async {
     try {
       final response = await _client.put(
-        '${AppConstants.apiPrefix}/receipts/$id/status',
+        '/api/v1/receipts/$id/status',
         data: {'status': status.toString().split('.').last},
       );
 
@@ -155,7 +200,7 @@ class ApiService {
   Future<void> updateReceiptTags(String id, List<String> tags) async {
     try {
       final response = await _client.put(
-        '${AppConstants.apiPrefix}/receipts/$id/tags',
+        '/api/v1/receipts/$id/tags',
         data: {'tags': tags},
       );
 
@@ -173,7 +218,7 @@ class ApiService {
   Future<void> deleteReceipt(String id) async {
     try {
       final response = await _client.delete(
-        '${AppConstants.apiPrefix}/receipts/$id',
+        '/api/v1/receipts/$id',
       );
 
       if (response.data['code'] != 200) {
@@ -205,7 +250,7 @@ class ApiService {
       };
 
       final response = await _client.get(
-        '${AppConstants.apiPrefix}/receipts/statistics',
+        '/api/v1/receipts/statistics',
         queryParameters: queryParams,
       );
 
@@ -236,7 +281,7 @@ class ApiService {
       };
 
       final response = await _client.get(
-        '${AppConstants.apiPrefix}/receipts/merchant-statistics',
+        '/api/v1/receipts/merchant-statistics',
         queryParameters: queryParams,
       );
 
@@ -267,7 +312,7 @@ class ApiService {
       };
 
       final response = await _client.get(
-        '${AppConstants.apiPrefix}/receipts/time-slot-statistics',
+        '/api/v1/receipts/time-slot-statistics',
         queryParameters: queryParams,
       );
 

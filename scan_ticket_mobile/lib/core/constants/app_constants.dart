@@ -6,7 +6,7 @@ class AppConstants {
   static const String appName = 'ScanTicket';
 
   // API 相关
-  static const String apiPrefix = '/api/v1';
+  static const String apiPrefix = '';  // 移除 /api/v1 前缀，因为服务器端已经包含了
   static String get baseUrl => EnvConfig.getBaseUrl();
   static const int connectionTimeout = 30000;
   static const int receiveTimeout = 30000;

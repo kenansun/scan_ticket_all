@@ -1,17 +1,31 @@
-fastapi==0.104.1
-uvicorn==0.24.0
-python-multipart==0.0.6
-python-dotenv==1.0.0
-oss2==2.18.1
-pydantic==2.5.2
-pydantic-settings==2.1.0
-python-jose[cryptography]==3.3.0  # JWT支持
-passlib[bcrypt]==1.7.4           # 密码哈希
-alembic==1.12.1                  # 数据库迁移
-sqlalchemy==2.0.23               # ORM
-python-dateutil==2.8.2           # 日期处理
-requests==2.31.0                 # HTTP客户端
-openai==1.3.5                    # OpenAI API
-httpx==0.25.2                    # 异步HTTP客户端
-tenacity==8.2.3                  # 重试机制
-loguru==0.7.2                    # 日志记录
+fastapi>=0.104.1
+uvicorn>=0.24.0
+python-multipart>=0.0.6
+python-jose>=3.3.0
+passlib>=1.7.4
+python-dotenv>=1.0.0
+oss2>=2.18.1
+httptools>=0.6.1
+websockets>=12.0
+watchfiles>=0.21.0
+ecdsa>=0.18.0
+rsa>=4.9.0
+SQLAlchemy>=2.0.23
+aiomysql>=0.2.0
+alembic>=1.12.1
+pydantic>=2.5.2
+pydantic-settings>=2.1.0
+requests==2.31.0
+openai==1.3.5
+httpx==0.25.2
+tenacity==8.2.3
+loguru==0.7.2
+
+# Testing dependencies
+pytest>=7.4.3
+pytest-asyncio>=0.23.2
+pytest-cov>=4.1.0
+asgi-lifespan>=2.1.0
+httpx>=0.25.2
+factory-boy>=3.3.0
+pytest-mock>=3.12.0

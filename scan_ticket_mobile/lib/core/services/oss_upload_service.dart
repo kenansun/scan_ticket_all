@@ -5,14 +5,16 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 import 'package:http_parser/http_parser.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:dio_smart_retry/dio_smart_retry.dart';
 import '../constants/app_constants.dart';
 import '../services/log_service.dart';
 
 class OssUploadService {
   final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(minutes: 5),
-    receiveTimeout: const Duration(minutes: 5),
-    sendTimeout: const Duration(minutes: 5),
+    // 设置更合理的超时时间
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+    sendTimeout: const Duration(seconds: 30),
     validateStatus: (status) => status! < 500,
   ))
     ..interceptors.add(LogInterceptor(
@@ -23,6 +25,18 @@ class OssUploadService {
       responseBody: true,
       error: true,
     ))
+    ..interceptors.add(
+      RetryInterceptor(
+        dio: Dio(),
+        retries: 3,
+        retryDelays: const [
+          Duration(seconds: 1),
+          Duration(seconds: 2),
+          Duration(seconds: 3),
+        ],
+        retryableExtraStatuses: {408, 429}, // 添加额外的需要重试的状态码
+      ),
+    )
     ..httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
@@ -37,11 +51,23 @@ class OssUploadService {
   // 创建一个新的Dio实例用于OSS上传
   Dio _createOssDio() {
     return Dio(BaseOptions(
-      connectTimeout: const Duration(minutes: 5),
-      receiveTimeout: const Duration(minutes: 5),
-      sendTimeout: const Duration(minutes: 5),
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 30),
       validateStatus: (status) => status! < 500,
     ))
+      ..interceptors.add(
+        RetryInterceptor(
+          dio: Dio(),
+          retries: 3,
+          retryDelays: const [
+            Duration(seconds: 1),
+            Duration(seconds: 2),
+            Duration(seconds: 3),
+          ],
+          retryableExtraStatuses: {408, 429},
+        ),
+      )
       ..httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
           final client = HttpClient();
@@ -54,7 +80,7 @@ class OssUploadService {
   // 获取服务器签名
   Future<Map<String, dynamic>> _getSignature(String fileName, String fileType) async {
     try {
-      final url = '${AppConstants.baseUrl}${AppConstants.apiPrefix}/oss/signature';
+      final url = '${AppConstants.baseUrl}/api/v1/oss/signature';
       _logger.info('Getting signature from: $url', tag: _tag);
       
       final response = await _dio.post(
@@ -148,7 +174,7 @@ Size: ${await file.length()} bytes
         'OSSAccessKeyId': signatureData['accessId'],
         'success_action_status': '200',
         'signature': signatureData['signature'],
-        'file': await MultipartFile.fromFile(
+        'file': MultipartFileRecreatable.fromFileSync(
           file.path,
           filename: fileName,
           contentType: MediaType.parse(mimeType),

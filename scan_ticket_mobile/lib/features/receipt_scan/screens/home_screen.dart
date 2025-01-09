@@ -4,6 +4,8 @@ import '../providers/receipt_state.dart';
 import '../../../ui/widgets/receipt_card.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/extensions/context_extension.dart';
+import '../../../core/services/unified_image_service.dart';
+import '../providers/scan_state.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -158,12 +160,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         },
                       ),
                     ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, AppRouter.scan);
-        },
-        child: const Icon(Icons.camera_alt),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'gallery',
+            onPressed: () async {
+              try {
+                final imageService = UnifiedImageService();
+                final imageUrl = await imageService.pickImageFromGallery();
+                if (imageUrl != null && mounted) {
+                  // 更新扫描状态
+                  ref.read(scanStateProvider.notifier).setImageUrl(imageUrl);
+                  // 导航到扫描结果页面
+                  Navigator.pushNamed(context, AppRouter.scan);
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('选择图片失败: $e')),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.photo_library),
+            label: const Text('从相册选择'),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton.extended(
+            heroTag: 'camera',
+            onPressed: () {
+              Navigator.pushNamed(context, AppRouter.scan);
+            },
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('拍照'),
+          ),
+        ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

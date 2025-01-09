@@ -1,0 +1,3 @@
+"""
+ScanTicket Server
+"""

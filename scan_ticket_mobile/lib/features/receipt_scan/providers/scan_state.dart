@@ -8,11 +8,12 @@ part 'scan_state.freezed.dart';
 class ScanState with _$ScanState {
   const factory ScanState({
     String? imagePath,
+    String? imageUrl,
     @Default(false) bool isScanning,
     @Default(false) bool isUploading,
     String? error,
     Map<String, dynamic>? scanResult,
-  }) = _ScanState;
+  }) = _$ScanStateImpl;
 }
 
 class ScanStateNotifier extends StateNotifier<ScanState> {
@@ -32,7 +33,10 @@ class ScanStateNotifier extends StateNotifier<ScanState> {
       // 上传图片
       state = state.copyWith(isUploading: true);
       final url = await _repository.uploadImage(imagePath);
-      state = state.copyWith(isUploading: false);
+      state = state.copyWith(
+        isUploading: false,
+        imageUrl: url,
+      );
 
       // 分析小票
       final result = await _repository.analyzeReceipt(url);
@@ -45,6 +49,31 @@ class ScanStateNotifier extends StateNotifier<ScanState> {
       state = state.copyWith(
         isScanning: false,
         isUploading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  // 设置已上传图片的URL
+  Future<void> setImageUrl(String imageUrl) async {
+    state = state.copyWith(
+      imagePath: imageUrl,
+      isScanning: true,
+      error: null,
+      scanResult: null,
+    );
+
+    try {
+      // 直接分析小票,因为图片已经上传
+      final result = await _repository.analyzeReceipt(imageUrl);
+      
+      state = state.copyWith(
+        isScanning: false,
+        scanResult: result.toJson(),
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isScanning: false,
         error: e.toString(),
       );
     }

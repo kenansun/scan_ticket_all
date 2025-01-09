@@ -1,45 +1,83 @@
+"""
+OSS相关路由
+"""
+
 from fastapi import APIRouter, HTTPException
-from ...models.oss import SignatureRequest, SignedUrlRequest, BatchSignedUrlRequest
-from ...services.oss_service import OSSService
+from fastapi.logger import logger
+from src.models.oss import SignatureRequest, SignedUrlRequest, BatchSignedUrlRequest
+from src.services.oss_service import OSSService
 
-router = APIRouter(prefix="/oss", tags=["OSS"])
+# 创建路由器，指定标签
+router = APIRouter(tags=["OSS"])
 
-@router.post("/signature")
+@router.post("/signature",
+    response_model=dict,
+    summary="获取OSS上传签名",
+    description="获取用于直传文件到OSS的签名信息",
+    response_description="签名信息，包含accessId、policy、signature等"
+)
 async def get_signature(request: SignatureRequest):
-    """
-    获取OSS上传签名
-    """
+    """获取OSS上传签名"""
     try:
-        return await OSSService.get_signature(request)
+        oss_service = OSSService()
+        return await oss_service.get_signature(request)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"获取签名失败: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="获取签名失败，请稍后重试"
+        )
 
-@router.post("/callback")
+@router.post("/callback",
+    response_model=dict,
+    summary="OSS上传回调",
+    description="处理OSS上传完成后的回调请求",
+    response_description="回调处理结果"
+)
 async def oss_callback(request: dict):
-    """
-    OSS上传回调接口
-    """
+    """处理OSS上传回调"""
     try:
-        return await OSSService.handle_callback(request)
+        oss_service = OSSService()
+        return await oss_service.handle_callback(request)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"处理回调失败: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="处理回调失败，请稍后重试"
+        )
 
-@router.post("/signed-url")
+@router.post("/url",
+    response_model=dict,
+    summary="获取文件访问URL",
+    description="获取OSS文件的临时访问URL",
+    response_description="包含文件访问URL的响应"
+)
 async def get_signed_url(request: SignedUrlRequest):
-    """
-    获取单个文件的签名URL
-    """
+    """获取文件的签名URL"""
     try:
-        return await OSSService.get_signed_url(request)
+        oss_service = OSSService()
+        return await oss_service.get_signed_url(request)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"获取URL失败: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="获取URL失败，请稍后重试"
+        )
 
-@router.post("/batch-signed-urls")
+@router.post("/batch-urls",
+    response_model=dict,
+    summary="批量获取文件访问URL",
+    description="批量获取多个OSS文件的临时访问URL",
+    response_description="包含多个文件访问URL的响应"
+)
 async def get_batch_signed_urls(request: BatchSignedUrlRequest):
-    """
-    批量获取文件的签名URL
-    """
+    """批量获取文件的签名URL"""
     try:
-        return await OSSService.get_batch_signed_urls(request)
+        oss_service = OSSService()
+        return await oss_service.get_batch_signed_urls(request)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"批量获取URL失败: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="批量获取URL失败，请稍后重试"
+        )
